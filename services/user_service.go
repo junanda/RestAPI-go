@@ -9,10 +9,12 @@ import (
 	"github.com/junanda/golang-aa/models"
 	"github.com/junanda/golang-aa/repository"
 	"github.com/junanda/golang-aa/utils"
+	"gorm.io/gorm"
 )
 
 type UserService interface {
 	LoginUser(c *gin.Context, user models.User) error
+	SignUp(c *gin.Context, user models.User) error
 }
 
 type userServiceImpl struct {
@@ -36,6 +38,9 @@ func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) error {
 
 	userExist, err = u.userRepo.FindByEmail(user.Email)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("user not registered")
+		}
 		return err
 	}
 
@@ -62,6 +67,34 @@ func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) error {
 	}
 
 	c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
+
+	return nil
+}
+
+func (u *userServiceImpl) SignUp(c *gin.Context, user models.User) error {
+	var (
+		exisingUser models.User
+		errHash     error
+	)
+
+	exisingUser, err := u.userRepo.FindByEmail(user.Email)
+	if err != nil {
+		return err
+	}
+
+	if exisingUser.ID != 0 {
+		return errors.New("user already exists")
+	}
+
+	user.Password, errHash = utils.GenerateHashPassword(user.Password)
+	if errHash != nil {
+		return errors.New("could not generate password hash")
+	}
+
+	err = u.userRepo.CreateUser(user)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

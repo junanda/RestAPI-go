@@ -39,7 +39,7 @@ func (a *AuthControllerImpl) Handler(r *gin.Engine) {
 			err := a.userService.LoginUser(ctx, user)
 			if err != nil {
 				ctx.JSON(http.StatusBadRequest, gin.H{
-					"error": err.Error(),
+					"message": err.Error(),
 				})
 				return
 			}
@@ -50,7 +50,21 @@ func (a *AuthControllerImpl) Handler(r *gin.Engine) {
 		})
 
 		authRoute.POST("/signup", func(ctx *gin.Context) {
-			log.Println("SignUp route")
+			var (
+				user models.User
+			)
+
+			if err := ctx.ShouldBindJSON(&user); err != nil {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+
+			err := a.userService.SignUp(ctx, user)
+			if err != nil {
+				ctx.JSON(http.StatusBadRequest, gin.H{
+					"message": err.Error(),
+				})
+			}
 		})
 
 		authRoute.GET("/logout", func(ctx *gin.Context) {

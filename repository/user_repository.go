@@ -1,14 +1,13 @@
 package repository
 
 import (
-	"errors"
-
 	"github.com/junanda/golang-aa/models"
 	"gorm.io/gorm"
 )
 
 type UserRepository interface {
 	FindByEmail(email string) (models.User, error)
+	CreateUser(data models.User) error
 }
 
 type userRepositoryImpl struct {
@@ -26,10 +25,18 @@ func (u *userRepositoryImpl) FindByEmail(email string) (models.User, error) {
 		existingUser models.User
 	)
 
-	u.db.Where("email = ?", email).First(&existingUser)
-	if existingUser.ID == 0 {
-		return existingUser, errors.New("user does not exist")
+	err := u.db.Where("email = ?", email).First(&existingUser).Error
+	if err != nil {
+		return existingUser, err
 	}
 
 	return existingUser, nil
+}
+
+func (u *userRepositoryImpl) CreateUser(data models.User) error {
+	err := u.db.Create(&data).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
