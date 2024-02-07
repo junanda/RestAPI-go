@@ -15,6 +15,7 @@ import (
 type UserService interface {
 	LoginUser(c *gin.Context, user models.User) error
 	SignUp(c *gin.Context, user models.User) error
+	LogOut(c *gin.Context) error
 }
 
 type userServiceImpl struct {
@@ -96,5 +97,10 @@ func (u *userServiceImpl) SignUp(c *gin.Context, user models.User) error {
 		return err
 	}
 
+	return nil
+}
+
+func (u *userServiceImpl) LogOut(c *gin.Context) error {
+	c.SetCookie("token", "", -1, "/", "localhost", false, true)
 	return nil
 }

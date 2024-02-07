@@ -19,10 +19,13 @@ func main() {
 	userRepo := repository.InitUserRepository(db)
 
 	userService := services.InitUserService(userRepo)
+	berandaService := services.Init()
 
 	authController := controllers.InitAuthController(userService)
+	berandaController := controllers.Init(berandaService)
 
 	authController.Handler(r)
+	berandaController.Handler(r)
 
 	r.Run(":8080")
 }

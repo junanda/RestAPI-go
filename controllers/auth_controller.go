@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -68,7 +67,13 @@ func (a *AuthControllerImpl) Handler(r *gin.Engine) {
 		})
 
 		authRoute.GET("/logout", func(ctx *gin.Context) {
-			log.Println("Logout route")
+			err := a.userService.LogOut(ctx)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"failed": err.Error()})
+				return
+			}
+
+			ctx.JSON(http.StatusOK, gin.H{"success": "user logged out"})
 		})
 	}
 }
