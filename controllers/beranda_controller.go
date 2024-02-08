@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/junanda/golang-aa/middleware"
 	"github.com/junanda/golang-aa/services"
 )
 
@@ -22,7 +23,7 @@ func Init(sb services.BerandaService) BerandaController {
 }
 
 func (b *BerandaControllerImpl) Handler(r *gin.Engine) {
-	berandaRoute := r.Group("/beranda")
+	berandaRoute := r.Group("/beranda", middleware.IsAuthorized())
 	{
 		berandaRoute.GET("/", func(ctx *gin.Context) {
 			cookie, err := ctx.Cookie("token")
