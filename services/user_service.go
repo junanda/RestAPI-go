@@ -13,7 +13,7 @@ import (
 )
 
 type UserService interface {
-	LoginUser(c *gin.Context, user models.User) error
+	LoginUser(c *gin.Context, user models.User) (string, error)
 	SignUp(c *gin.Context, user models.User) error
 	LogOut(c *gin.Context) error
 }
@@ -31,7 +31,7 @@ func InitUserService(userRepo repository.UserRepository) UserService {
 	}
 }
 
-func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) error {
+func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) (string, error) {
 	var (
 		userExist models.User
 		err       error
@@ -40,14 +40,14 @@ func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) error {
 	userExist, err = u.userRepo.FindByEmail(user.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("user not registered")
+			return "", errors.New("user not registered")
 		}
-		return err
+		return "", err
 	}
 
 	errHash := utils.CompatreHashPassword(user.Password, userExist.Password)
 	if !errHash {
-		return errors.New("invalid password")
+		return "", errors.New("invalid password")
 	}
 
 	expirationTime := time.Now().Add(5 * time.Minute)
@@ -64,12 +64,12 @@ func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) error {
 	tokenString, err := token.SignedString(u.jwtKey)
 
 	if err != nil {
-		return errors.New("could not generate token")
+		return "", errors.New("could not generate token")
 	}
 
-	c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
+	// c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
 
-	return nil
+	return tokenString, nil
 }
 
 func (u *userServiceImpl) SignUp(c *gin.Context, user models.User) error {
@@ -80,7 +80,9 @@ func (u *userServiceImpl) SignUp(c *gin.Context, user models.User) error {
 
 	exisingUser, err := u.userRepo.FindByEmail(user.Email)
 	if err != nil {
-		return err
+		if err != gorm.ErrRecordNotFound {
+			return err
+		}
 	}
 
 	if exisingUser.ID != 0 {

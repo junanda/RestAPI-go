@@ -26,16 +26,16 @@ func (b *BerandaControllerImpl) Handler(r *gin.Engine) {
 	berandaRoute := r.Group("/beranda", middleware.IsAuthorized())
 	{
 		berandaRoute.GET("/", func(ctx *gin.Context) {
-			cookie, err := ctx.Cookie("token")
-			if err != nil {
-				ctx.JSON(http.StatusUnauthorized, gin.H{
-					"message": "unautorized",
-				})
+			// cookie, err := ctx.Cookie("token")
+			// if err != nil {
+			// 	ctx.JSON(http.StatusUnauthorized, gin.H{
+			// 		"message": "unautorized",
+			// 	})
 
-				return
-			}
+			// 	return
+			// }
 
-			role, err := b.berandaS.Beranda(ctx, cookie)
+			role, err := b.berandaS.Beranda(ctx)
 			if err != nil {
 				ctx.JSON(http.StatusUnauthorized, gin.H{
 					"message": err.Error(),
@@ -51,15 +51,15 @@ func (b *BerandaControllerImpl) Handler(r *gin.Engine) {
 		})
 
 		berandaRoute.GET("/premium", func(ctx *gin.Context) {
-			cookie, err := ctx.Cookie("token")
-			if err != nil {
-				ctx.JSON(http.StatusUnauthorized, gin.H{
-					"message": "unauthorized",
-				})
-				return
-			}
+			// cookie, err := ctx.Cookie("token")
+			// if err != nil {
+			// 	ctx.JSON(http.StatusUnauthorized, gin.H{
+			// 		"message": "unauthorized",
+			// 	})
+			// 	return
+			// }
 
-			role, err := b.berandaS.Premium(ctx, cookie)
+			role, err := b.berandaS.Premium(ctx)
 			if err != nil {
 				ctx.JSON(http.StatusUnauthorized, gin.H{
 					"message": err.Error(),

@@ -35,7 +35,7 @@ func (a *AuthControllerImpl) Handler(r *gin.Engine) {
 				return
 			}
 
-			err := a.userService.LoginUser(ctx, user)
+			token, err := a.userService.LoginUser(ctx, user)
 			if err != nil {
 				ctx.JSON(http.StatusBadRequest, gin.H{
 					"message": err.Error(),
@@ -45,6 +45,7 @@ func (a *AuthControllerImpl) Handler(r *gin.Engine) {
 
 			ctx.JSON(http.StatusOK, gin.H{
 				"success": "user logged",
+				"token":   token,
 			})
 		})
 
@@ -64,6 +65,10 @@ func (a *AuthControllerImpl) Handler(r *gin.Engine) {
 					"message": err.Error(),
 				})
 			}
+
+			ctx.JSON(http.StatusOK, gin.H{
+				"message": "user registered",
+			})
 		})
 
 		authRoute.GET("/logout", func(ctx *gin.Context) {

@@ -4,12 +4,11 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/junanda/golang-aa/utils"
 )
 
 type BerandaService interface {
-	Beranda(ctx *gin.Context, token string) (string, error)
-	Premium(ctx *gin.Context, token string) (string, error)
+	Beranda(ctx *gin.Context) (string, error)
+	Premium(ctx *gin.Context) (string, error)
 }
 
 type BerandaServiceImpl struct{}
@@ -18,28 +17,22 @@ func Init() BerandaService {
 	return &BerandaServiceImpl{}
 }
 
-func (bs *BerandaServiceImpl) Beranda(ctx *gin.Context, token string) (string, error) {
-	claims, err := utils.ParseToken(token)
-	if err != nil {
+func (bs *BerandaServiceImpl) Beranda(ctx *gin.Context) (string, error) {
+	role := ctx.GetString("role")
+
+	if role != "user" && role != "admin" {
 		return "", errors.New("user unauthorized")
 	}
 
-	if claims.Role != "user" && claims.Role != "admin" {
-		return "", errors.New("user unauthorized")
-	}
-
-	return claims.Role, nil
+	return role, nil
 }
 
-func (bs *BerandaServiceImpl) Premium(ctx *gin.Context, token string) (string, error) {
-	claims, err := utils.ParseToken(token)
-	if err != nil {
+func (bs *BerandaServiceImpl) Premium(ctx *gin.Context) (string, error) {
+	role := ctx.GetString("role")
+
+	if role != "admin" {
 		return "", errors.New("user unauthorized")
 	}
 
-	if claims.Role != "admin" {
-		return "", errors.New("user unauthorized")
-	}
-
-	return claims.Role, nil
+	return role, nil
 }
