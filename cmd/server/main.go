@@ -22,9 +22,13 @@ func main() {
 
 	config := config.Initialize()
 
-	db := database.InitDB(config)
+	dbMysql := database.NewMysqlDB(config)
+	dbRedis := database.NewRedisDB(config)
 
-	userRepo := repository.InitUserRepository(db)
+	dbMysql.Connect()
+	dbRedis.Connect()
+
+	userRepo := repository.InitUserRepository(dbMysql.GetDb())
 
 	userService := services.InitUserService(userRepo)
 	berandaService := services.Init()
@@ -58,11 +62,12 @@ func main() {
 		log.Fatal("Server Shutdown:", err)
 	}
 
-	dbc, _ := db.DB()
+	dbMysql.Close()
+	dbRedis.Close()
+
 	//catching ctx.Done()
 	select {
 	case <-ctx.Done():
-		dbc.Close()
 		log.Println("timeout of 5 seconds")
 	}
 	log.Println("Server exiting")
