@@ -13,17 +13,19 @@ type BerandaController interface {
 }
 
 type BerandaControllerImpl struct {
+	md       middleware.HeaderMiddleWare
 	berandaS services.BerandaService
 }
 
-func Init(sb services.BerandaService) BerandaController {
+func Init(sb services.BerandaService, amd middleware.HeaderMiddleWare) BerandaController {
 	return &BerandaControllerImpl{
+		md:       amd,
 		berandaS: sb,
 	}
 }
 
 func (b *BerandaControllerImpl) Handler(r *gin.Engine) {
-	berandaRoute := r.Group("/beranda", middleware.IsAuthorized())
+	berandaRoute := r.Group("/beranda", b.md.IsAuthorized)
 	{
 		berandaRoute.GET("/", func(ctx *gin.Context) {
 			// cookie, err := ctx.Cookie("token")

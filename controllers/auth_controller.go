@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/junanda/golang-aa/models"
 	"github.com/junanda/golang-aa/services"
+	"github.com/junanda/golang-aa/utils"
 )
 
 type AuthController interface {
@@ -72,7 +73,8 @@ func (a *AuthControllerImpl) Handler(r *gin.Engine) {
 		})
 
 		authRoute.GET("/logout", func(ctx *gin.Context) {
-			err := a.userService.LogOut(ctx)
+			token := utils.GetTokenString(ctx)
+			err := a.userService.LogOut(ctx, token)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, gin.H{"failed": err.Error()})
 				return
