@@ -30,9 +30,10 @@ func (a *authRepository) Save(ctx *gin.Context, data models.AuthData, dataTtl in
 	err := a.client.Set(ctx, data.IdToken, redisData, 0).Err()
 	if err != nil {
 		log.Println("error set data on redis: ", err.Error())
+		return err
 	}
 
-	return err
+	return nil
 }
 
 func (a *authRepository) GetData(ctx *gin.Context, dataKey string) (models.AuthData, error) {
