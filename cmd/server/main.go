@@ -13,6 +13,7 @@ import (
 	"github.com/junanda/golang-aa/config"
 	"github.com/junanda/golang-aa/controllers"
 	"github.com/junanda/golang-aa/database"
+	"github.com/junanda/golang-aa/middleware"
 	"github.com/junanda/golang-aa/repository"
 	"github.com/junanda/golang-aa/services"
 )
@@ -29,12 +30,15 @@ func main() {
 	dbRedis.Connect()
 
 	userRepo := repository.InitUserRepository(dbMysql.GetDb())
+	authRepo := repository.NewAuthRepository(dbRedis.GetDb())
 
-	userService := services.InitUserService(userRepo)
+	userService := services.InitUserService(userRepo, authRepo)
+	authService := services.NewAuthService(authRepo)
 	berandaService := services.Init()
+	middleWare := middleware.NewHeaderMiddleware(authService)
 
 	authController := controllers.InitAuthController(userService)
-	berandaController := controllers.Init(berandaService)
+	berandaController := controllers.Init(berandaService, middleWare)
 
 	authController.Handler(r)
 	berandaController.Handler(r)
