@@ -1,7 +1,13 @@
 package utils
 
 import (
+	"log"
+	"regexp"
+	"strings"
+
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"github.com/junanda/golang-aa/models"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -21,14 +27,30 @@ func ParseToken(tokenString string) (claim *models.Claims, err error) {
 		return []byte("my_secret_key"), nil
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
 	claim, ok := token.Claims.(*models.Claims)
 	if !ok {
-		return nil, err
+		log.Println("claims extract: ", err.Error())
+		return claim, err
+	}
+
+	if err != nil {
+		log.Println("parsing with claim: ", err.Error())
+		return claim, err
 	}
 
 	return claim, nil
+}
+
+func GenerateUUID() string {
+	idString := uuid.New()
+	return regexp.MustCompile(`[^a-zA-Z0-9 ]+`).ReplaceAllString(idString.String(), "")
+}
+
+func GetTokenString(ctx *gin.Context) string {
+	header_auth := ctx.Request.Header.Get("Authorization")
+	token := ""
+	if len(strings.Split(header_auth, " ")) == 2 {
+		token = strings.Split(header_auth, " ")[1]
+	}
+	return token
 }
