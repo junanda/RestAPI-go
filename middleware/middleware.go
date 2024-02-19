@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/junanda/golang-aa/repository"
+	"github.com/junanda/golang-aa/services"
 	"github.com/junanda/golang-aa/utils"
 )
 
@@ -14,26 +14,22 @@ type HeaderMiddleWare interface {
 }
 
 type headerMiddleware struct {
-	authRepo repository.AuthRepository
+	authService services.AuthService
 }
 
-func NewHeaderMiddleware(authRepo repository.AuthRepository) HeaderMiddleWare {
+func NewHeaderMiddleware(as services.AuthService) HeaderMiddleWare {
 	return &headerMiddleware{
-		authRepo: authRepo,
+		authService: as,
 	}
 }
 
 func (h *headerMiddleware) IsAuthorized(ctx *gin.Context) {
-	header_auth := ctx.Request.Header.Get("Authorization")
-	token := ""
-	if len(strings.Split(header_auth, " ")) == 2 {
-		token = strings.Split(header_auth, " ")[1]
-	}
+	token := utils.GetTokenString(ctx)
 
-	claim, err := utils.ParseToken(token)
+	claim, err := h.authService.ValidationJwt(ctx, token)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": "user unauthorized",
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"message": err.Error(),
 		})
 		ctx.Abort()
 		return
