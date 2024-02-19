@@ -8,4 +8,5 @@ type User struct {
 	Email    string `json:"email" gorm:"unique"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
+	Uid      string `json:"uid,omitempty" gorm:"unique"`
 }
