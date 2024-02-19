@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,18 +16,20 @@ import (
 type UserService interface {
 	LoginUser(c *gin.Context, user models.User) (string, error)
 	SignUp(c *gin.Context, user models.User) error
-	LogOut(c *gin.Context) error
+	LogOut(c *gin.Context, token string) error
 }
 
 type userServiceImpl struct {
 	userRepo repository.UserRepository
+	authRepo repository.AuthRepository
 	jwtKey   []byte
 }
 
-func InitUserService(userRepo repository.UserRepository) UserService {
+func InitUserService(userRepo repository.UserRepository, ar repository.AuthRepository) UserService {
 	jkey := []byte("my_secret_key")
 	return &userServiceImpl{
 		userRepo: userRepo,
+		authRepo: ar,
 		jwtKey:   jkey,
 	}
 }
@@ -34,6 +37,7 @@ func InitUserService(userRepo repository.UserRepository) UserService {
 func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) (string, error) {
 	var (
 		userExist models.User
+		dataCache models.AuthData
 		err       error
 	)
 
@@ -54,6 +58,7 @@ func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) (string, e
 
 	clain := &models.Claims{
 		Role: userExist.Role,
+		Uid:  userExist.Uid,
 		StandardClaims: jwt.StandardClaims{
 			Subject:   userExist.Email,
 			ExpiresAt: expirationTime.Unix(),
@@ -65,6 +70,15 @@ func (u *userServiceImpl) LoginUser(c *gin.Context, user models.User) (string, e
 
 	if err != nil {
 		return "", errors.New("could not generate token")
+	}
+
+	dataCache.IdToken = userExist.Uid
+	dataCache.JwtToken = tokenString
+	dataCache.Role = userExist.Role
+
+	err = u.authRepo.Save(c, dataCache, 0)
+	if err != nil {
+		log.Println("failed cache data")
 	}
 
 	// c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
@@ -94,6 +108,8 @@ func (u *userServiceImpl) SignUp(c *gin.Context, user models.User) error {
 		return errors.New("could not generate password hash")
 	}
 
+	user.Uid = utils.GenerateUUID()
+
 	err = u.userRepo.CreateUser(user)
 	if err != nil {
 		return err
@@ -102,7 +118,12 @@ func (u *userServiceImpl) SignUp(c *gin.Context, user models.User) error {
 	return nil
 }
 
-func (u *userServiceImpl) LogOut(c *gin.Context) error {
-	c.SetCookie("token", "", -1, "/", "localhost", false, true)
+func (u *userServiceImpl) LogOut(c *gin.Context, token string) error {
+	// c.SetCookie("token", "", -1, "/", "localhost", false, true)
+	claims, _ := utils.ParseToken(token)
+	err := u.authRepo.DeleteKey(c, claims.Uid)
+	if err != nil {
+		log.Println("Cannot Remove Key: ", claims.Uid)
+	}
 	return nil
 }

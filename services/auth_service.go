@@ -36,15 +36,17 @@ func (a *authService) ValidationJwt(ctx *gin.Context, token string) (*models.Cla
 		case jwt.ValidationErrorSignatureInvalid:
 			return nil, errors.New("Unauthorized")
 		case jwt.ValidationErrorExpired:
-			return nil, errors.New("Unauthorized, Token expired")
+			if err = a.authRepo.DeleteKey(ctx, claims.Uid); err != nil {
+				log.Println("Failed remove keys: ", claims.Uid)
+			}
+			return nil, errors.New("Unauthorized, Token expired or user has logout")
 		default:
 			return nil, errors.New("Unauthorized")
 		}
 	}
 
-	authData, err := a.authRepo.GetData(ctx, token)
+	authData, err := a.authRepo.GetData(ctx, claims.Uid)
 	if err != nil {
-		log.Println("error data redis : ", err.Error())
 		return nil, errors.New("Unauthorized")
 	}
 
